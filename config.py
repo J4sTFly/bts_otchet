@@ -1,8 +1,9 @@
 import os.path
 import yaml
 
-class Config():
-    CONFIG_PATH = os.path.join(os.getcwd(), 'config.yaml')
+
+class Config:
+    CONFIG_PATH = os.path.join(os.getcwd(), "config.yaml")
 
     def __init__(self):
         self.load_config()
@@ -12,7 +13,7 @@ class Config():
             with open(self.CONFIG_PATH) as file:
                 self.data = yaml.full_load(file.read())
         else:
-            raise FileNotFoundError('Config not found')
+            raise FileNotFoundError("Config not found")
 
     def save_config(self, file):
         yaml.dump(self.data, default_flow_style=False)
@@ -22,4 +23,3 @@ class Config():
         if key in self.data:
             return self.data[key]
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'")
-
