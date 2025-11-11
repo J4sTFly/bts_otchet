@@ -39,6 +39,9 @@ class Parser(webdriver.Chrome):
 
             self.find_element(By.XPATH, xpaths["archives_section"]).click()
             self.wait_for_page_loading()
+            
+            for obj_id in server['objectIds']:
+                self.retrieve_obj_data(self, obj_id, server, xpaths)
             # self.populate_objects()
 
     def log_in(self, server, xpaths):
@@ -58,15 +61,23 @@ class Parser(webdriver.Chrome):
             "Array.from(document.querySelectorAll('.glyphicon-chevron-right')).forEach((el) => {el.click()})"
         )
 
-    def wait_for_page_loading(self):
+    def _wait_for_page_loading(self):
         WebdriverWait(self, 10).until(
             self.execute_script("return document.readyState") == "complete"
         )
 
-    def submit_filter_form(self, server, xpaths):
-        dateFrom = self.execute_script(
-            f'$.cookie("RepIndexText", "{server["report_cookie_name"]}")'
-        )
+    def retrieve_obj_data(self, obj_id, server, xpaths):
+        self.execute_script(f'$.cookie("RepIndexText", "{server["report_cookie_name"]}")')
+        
+        self.execute_script(server['ajax_request_format'].replace('$dateFrom', self.start_date) \                             
+                            .replace('$dateTo', self.end_date) \
+                            .replace('$objectId', obj_id)
+        
+    def _wait_until_jquery_finished(self):
+        WebDriverWait(self, 25).until(
+            self.execute_script('return $.active === 0')
+        }
+
 
 
 if __name__ == "__main__":
