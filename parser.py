@@ -8,11 +8,11 @@ from selenium.webdriver.common.by import By
 
 class Parser(webdriver.Chrome):
     stack = []
-    server = None
-    xpaths = []
 
     def __init__(self, config, start_date, end_date):
         self.config = config
+        self.start_date = start_date
+        self.end_date = end_date
 
         options = Options()
         # options.add_argument('-headless')
@@ -35,24 +35,22 @@ class Parser(webdriver.Chrome):
         for server in servers:
             xpaths = server["xpaths"]
             self.log_in(server, xpaths)
-            self.wait_for_page_loading()
+            self._wait_for_page_loading()
 
-            self.find_element(By.XPATH, xpaths["archives_section"]).click()
-            self.wait_for_page_loading()
-            
-            for obj_id in server['objectIds']:
-                self.retrieve_obj_data(self, obj_id, server, xpaths)
+            self.find_element(By.XPATH, xpaths["archives_section_btn"]).click()
+            self._wait_for_page_loading()
+            for obj_id in server["objectIds"]:
+                self._retrieve_obj_data(obj_id, server, xpaths)
             # self.populate_objects()
 
     def log_in(self, server, xpaths):
         self.get(server["url"])
 
-        self.find_element(By.XPATH, xpaths["username_input"]).send_keys(
-            server["credentials"]
-        )[0]
+        username = self.find_element(By.XPATH, xpaths["username_input"])
+        username.send_keys(server["credentials"][0])
         self.find_element(By.XPATH, xpaths["password_input"]).send_keys(
-            server["credentials"]
-        )[1]
+            server["credentials"][1]
+        )
 
         self.find_element(By.XPATH, xpaths["login_btn"]).click()
 
@@ -62,24 +60,35 @@ class Parser(webdriver.Chrome):
         )
 
     def _wait_for_page_loading(self):
-        WebdriverWait(self, 10).until(
-            self.execute_script("return document.readyState") == "complete"
+        WebDriverWait(self, 10).until(
+            lambda driver: self.execute_script("return document.readyState")
+            == "complete"
         )
 
-    def retrieve_obj_data(self, obj_id, server, xpaths):
-        self.execute_script(f'$.cookie("RepIndexText", "{server["report_cookie_name"]}")')
-        
-        self.execute_script(server['ajax_request_format'].replace('$dateFrom', self.start_date) \                             
-                            .replace('$dateTo', self.end_date) \
-                            .replace('$objectId', obj_id)
-        
-    def _wait_until_jquery_finished(self):
-        WebDriverWait(self, 25).until(
-            self.execute_script('return $.active === 0')
-        }
+    def _retrieve_obj_data(self, obj_id, server, xpaths):
+        self.execute_script(
+            f'$.cookie("RepIndexText", "{server["report_cookie_name"]}")'
+        )
+        request = (
+            self.config.ajax_request_format.replace("$serverHost", server["url"])
+            .replace("$reportIndex", self.config.report_index)
+            .replace("$startDate", self.start_date)
+            .replace("$endDate", self.end_date)
+            .replace("$objectId", str(obj_id))
+        )
 
+        response = self.execute_async_script(request, 30)
+        # TODO: parse response table
+
+    def _parse_html_table(self, html):
+        # Parse table to dictionary
+        pass
 
 
 if __name__ == "__main__":
-    parser = Parser(None, None, None)
-    parser.get("https://goolge.com")
+    from config import Config
+
+    config = Config()
+    parser = Parser(config, "2025-10-01T21:00:00.000Z", "2025-11-04T21:00:00.000Z")
+    parser.process()
+    # parser.get("https://google.com")
