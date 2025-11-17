@@ -1,3 +1,5 @@
+import re
+from bs4 import BeautifulSoup
 from time import sleep
 from selenium import webdriver
 
@@ -80,9 +82,12 @@ class Parser(webdriver.Chrome):
         response = self.execute_async_script(request, 30)
         # TODO: parse response table
 
-    def _parse_html_table(self, html):
-        # Parse table to dictionary
-        pass
+    def _parse_html_table(self, obj_id, html):
+        table_re = re.compile('<table.*?</table>', re.DOTALL)
+        table = table_re.search(html).group()
+
+        
+        
 
 
 if __name__ == "__main__":
