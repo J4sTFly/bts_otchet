@@ -42,8 +42,9 @@ class Parser(webdriver.Chrome):
             self.find_element(By.XPATH, xpaths["archives_section_btn"]).click()
             self._wait_for_page_loading()
             for obj_id in server["objectIds"]:
-                self._retrieve_obj_data(obj_id, server, xpaths)
-            # self.populate_objects()
+                obj_data = self._retrieve_obj_data(obj_id, server, xpaths)
+                self.stack.append(obj_data)
+        return self.stack
 
     def log_in(self, server, xpaths):
         self.get(server["url"])
@@ -80,15 +81,23 @@ class Parser(webdriver.Chrome):
         )
 
         response = self.execute_async_script(request, 30)
-        # TODO: parse response table
+        return self._parse_html_table(obj_id, response['data'])
 
     def _parse_html_table(self, obj_id, html):
+        data = {}
         table_re = re.compile('<table.*?</table>', re.DOTALL)
-        table = table_re.search(html).group()
+        table = table_re.group() if (table_re := table_re.search(html)) else None
 
-        
-        
+        if table:
+            head_cols_re = re.compile('<th.*?>(.*?)</th>', re.DOTALL)
+            head_cols = head_cols_re.findall(table)
 
+            body_cols_re = re.compile('<th.*?>(.*?)></td>', re.DOTALL)
+            body_cols = body_cols_re.findall(table)
+
+            data = dict(zip(head_cols, body_cols))
+        data['id'] = obj_id
+        return data
 
 if __name__ == "__main__":
     from config import Config
