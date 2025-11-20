@@ -22,6 +22,8 @@ class App(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.config = Config()
+
         self.setWindowTitle("BHS Report App")
         self.setFixedSize(QSize(800, 600))
 

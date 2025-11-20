@@ -15,6 +15,11 @@ class Config:
         else:
             raise FileNotFoundError("Config not found")
 
+    def find_object_by_id(self, id):
+        for obj in self.objects:
+            if obj['id'] == id:
+                return obj
+
     def save_config(self, file):
         yaml.dump(self.data, default_flow_style=False)
 
